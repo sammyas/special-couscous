@@ -9,7 +9,14 @@ class Controller
 {
 private:
   bool debug_; /* Enables debugging output */
-  unsigned int the_window_size;
+  bool initialized;
+  double RTO;
+  double SRTT;
+  double RTTVAR;
+  double alpha;
+  double beta;
+
+  double cwnd;
 
 public:
   /* Public interface for the congestion controller */
@@ -35,6 +42,8 @@ public:
   /* How long to wait (in milliseconds) if there are no acks
      before sending one more datagram */
   unsigned int timeout_ms( void );
+
+  void timed_out( void );
 };
 
 #endif

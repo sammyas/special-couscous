@@ -9,7 +9,17 @@ class Controller
 {
 private:
   bool debug_; /* Enables debugging output */
+  bool initialized;
+  double prev_rtt;
+  double min_rtt;
+  double rtt_diff;
+  double T_low;
+  double T_high;
+  uint64_t nlow_cycles;
+  double alpha;
+  double beta;
 
+  double cwnd;
   /* Add member variables here */
 
 public:
@@ -36,6 +46,8 @@ public:
   /* How long to wait (in milliseconds) if there are no acks
      before sending one more datagram */
   unsigned int timeout_ms( void );
+
+  void timed_out( void );
 };
 
 #endif

@@ -17,27 +17,68 @@ double read_env( const char *name, double def )
   return result;
 }
 
+int prev_rtt;
+
 /* Default constructor */
 Controller::Controller( const bool debug )
-  : debug_( debug ), initialized ( false ), RTO ( 1000 ), SRTT (0), RTTVAR (0),
-    alpha( 1/8.0 ), beta( 1/4.0 ), cwnd( 4 ), rtt_gain( 6.0 ), add_gain( 0.5 ),
-    mult_decr( 1.5 )
+  : debug_( debug ), initialized( false ), curr_phase( STARTUP ),
+    BtlBwFilter( 100, 10, true ), RTpropFilter( 1000000, 1, false ),
+    max_rtt( 0 ), delivery_rate( 0 ), next_send_time( timestamp_ms() ),
+    cwnd_gain( 2.885 ), curr_stage( 0 ), stage_start( 0 ),
+    nslow_startup_rounds( 3 ), prev_btlbw( 0 ), current_delivered( 0 ),
+    delivered_map()
 {
-  alpha = read_env("ALPHA", alpha);
-  beta = read_env("BETA", beta);
-  rtt_gain = read_env("RTT_GAIN", rtt_gain);
-  add_gain = read_env("ADD_GAIN", add_gain);
-  mult_decr = read_env("MULT_DECR", mult_decr);
+}
+
+double Controller::get_btlbw( void )
+{
+  double btlbw = BtlBwFilter.get_current();
+  if ( btlbw < 5 / get_rtt())
+    btlbw = 5 / get_rtt();
+  return btlbw;
+}
+
+double Controller::get_rtt( void )
+{
+  double rtt = RTpropFilter.get_current();
+  if ( rtt > 1e6 )
+    rtt = 1;
+  return rtt;
+}
+
+double Controller::get_pace_gain( void )
+{
+  if ( curr_phase == STARTUP )
+    return startup_pacing;
+  if ( curr_phase == DRAIN )
+    return drain_pacing;
+  return pacing_stages[curr_stage];
+}
+
+double Controller::get_cwnd_gain( void )
+{
+  if ( curr_phase == STARTUP )
+    return startup_pacing;
+  if ( curr_phase == DRAIN )
+    return drain_pacing;
+  return 2;
 }
 
 /* Get current window size, in datagrams */
 unsigned int Controller::window_size( void )
 {
+  double bdp = get_btlbw() * get_rtt();
+  unsigned int window = get_cwnd_gain() * bdp;
   if ( debug_ ) {
     cerr << "At time " << timestamp_ms()
-	 << " window size is " << cwnd << endl;
+	 << " window size is " << window << endl;
   }
-  return cwnd;
+  return window;
+}
+
+uint64_t Controller::get_next_send_time( void )
+{
+  return next_send_time;
 }
 
 /* A datagram was sent */
@@ -46,11 +87,35 @@ void Controller::datagram_was_sent( const uint64_t sequence_number,
 				    const uint64_t send_timestamp )
                                     /* in milliseconds */
 {
-  /* Default: take no action */
-
+  delivered_map[sequence_number] = current_delivered;
+  next_send_time = send_timestamp + 1.0 / ( get_btlbw() * get_pace_gain());
+  
   if ( debug_ ) {
     cerr << "At time " << send_timestamp
 	 << " sent datagram " << sequence_number << endl;
+  }
+}
+
+void Controller::update_startup_phase( double delivery_rate )
+{
+  double btlbw_diff = delivery_rate - prev_btlbw;
+  if ( btlbw_diff < 0.25 * prev_btlbw )
+    nslow_startup_rounds++;
+  else
+    nslow_startup_rounds = 0;
+  prev_btlbw = delivery_rate;
+  if ( nslow_startup_rounds == 3 ) {
+    cout << "phase change to DRAIN" << endl;
+    curr_phase = DRAIN;
+  }
+}
+
+void Controller::update_drain_phase( uint64_t inflight )
+{
+  double bdp = get_btlbw() * get_rtt();
+  if ( inflight <= bdp ) {
+    curr_phase = STEADY;
+    cout << "phase change to STEADY" << endl;
   }
 }
 
@@ -58,56 +123,53 @@ void Controller::datagram_was_sent( const uint64_t sequence_number,
 void Controller::ack_received( const uint64_t sequence_number_acked,
 			       /* what sequence number was acknowledged */
 			       const uint64_t send_timestamp_acked,
-			       /* when the acknowledged datagram was sent (sender's clock) */
+			       /* when the acknowledged datagram was sent ( sender's clock ) */
 			       const uint64_t recv_timestamp_acked,
-			       /* when the acknowledged datagram was received (receiver's clock)*/
-			       const uint64_t timestamp_ack_received )
-                               /* when the ack was received (by sender) */
+			       /* when the acknowledged datagram was received ( receiver's clock )*/
+			       const uint64_t timestamp_ack_received,
+                               /* when the ack was received ( by sender ) */
+                               const uint64_t inflight )
+                               /* Number of packets currently inflight */
 {
+  if ( sequence_number_acked >= current_delivered )
+    current_delivered++;
+  uint64_t rtt = timestamp_ack_received - send_timestamp_acked;
+  RTpropFilter.update( timestamp_ack_received, ( double )rtt );
 
-  uint64_t R = timestamp_ack_received - send_timestamp_acked;
-  if (!initialized) {
-    SRTT = R;
-    RTTVAR = R;
-    RTO = SRTT + rtt_gain * RTTVAR;
-    initialized = true;
+  delivery_rate = ( (( double ) current_delivered -
+		    delivered_map[sequence_number_acked] )
+		   / ( (double ) timestamp_ack_received - send_timestamp_acked ));
+  delivered_map.erase( sequence_number_acked );
+  BtlBwFilter.update( timestamp_ack_received, delivery_rate );
+
+  if ( timestamp_ack_received - stage_start > get_rtt()) {
+    stage_start = timestamp_ack_received;
+    curr_stage = ( curr_stage + 1 ) % 8;
+
+    if ( curr_phase == STARTUP )
+      update_startup_phase( delivery_rate );
+    if ( curr_phase == DRAIN )
+      update_drain_phase( inflight );
   }
-  else {
-    if (R >= RTO) {
-      if ( debug_ ) {
-	cerr << "timed out when the window size was " << cwnd << endl;
-      }
-      cwnd = cwnd / mult_decr;
-    }
-    else {
-      cwnd += add_gain / cwnd;
-    }
-    uint64_t rtt_diff = (SRTT > R) ? SRTT - R : R - SRTT;
-    RTTVAR = (1 - beta) * RTTVAR + beta * rtt_diff;
-    SRTT = (1 - alpha) * SRTT + alpha * R;
-    RTO = SRTT + rtt_gain * RTTVAR;
-    if ( debug_ ) {
-      cerr << "RTO is " << RTO << " SRTT is " << SRTT << " RTTVAR is " << RTTVAR
-	   << " and our new rtt is " << R << " with window size " << cwnd << endl;
-    }
-  }
+
 
   if ( debug_ ) {
     cerr << "At time " << timestamp_ack_received
 	 << " received ack for datagram " << sequence_number_acked
-	 << " (send @ time " << send_timestamp_acked
-	 << ", received @ time " << recv_timestamp_acked << " by receiver's clock)"
+	 << " ( send @ time " << send_timestamp_acked
+	 << ", received @ time " << recv_timestamp_acked << " by receiver's clock )"
 	 << endl;
   }
 }
 
-/* How long to wait (in milliseconds) if there are no acks
+/* How long to wait ( in milliseconds ) if there are no acks
    before sending one more datagram */
 unsigned int Controller::timeout_ms( void )
 {
-  return RTO;
+  return 1000;
 }
 
 void Controller::timed_out( void )
 {
+  cerr << "timed out" << endl;
 }

@@ -2,11 +2,13 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <unistd.h>
 
 #include "socket.hh"
 #include "contest_message.hh"
 #include "controller.hh"
 #include "poller.hh"
+#include "timestamp.hh"
 
 using namespace std;
 using namespace PollerShortNames;
@@ -28,6 +30,7 @@ private:
   void send_datagram( void );
   void got_ack( const uint64_t timestamp, const ContestMessage & msg );
   bool window_is_open( void );
+  bool time_to_send_packet ( void );
 
 public:
   DatagrumpSender( const char * const host, const char * const port,
@@ -72,7 +75,7 @@ DatagrumpSender::DatagrumpSender( const char * const host,
   /* connect socket to the remote host */
   /* (note: this doesn't send anything; it just tags the socket
      locally with the remote address */
-  socket_.connect( Address( host, port ) );  
+  socket_.connect( Address( host, port ) );
 
   cerr << "Sending to " << socket_.peer_address().to_string() << endl;
 }
@@ -92,7 +95,7 @@ void DatagrumpSender::got_ack( const uint64_t timestamp,
   controller_.ack_received( ack.header.ack_sequence_number,
 			    ack.header.ack_send_timestamp,
 			    ack.header.ack_recv_timestamp,
-			    timestamp );
+			    timestamp, sequence_number_ - next_ack_expected_);
 }
 
 void DatagrumpSender::send_datagram( void )
@@ -114,6 +117,11 @@ bool DatagrumpSender::window_is_open( void )
   return sequence_number_ - next_ack_expected_ < controller_.window_size();
 }
 
+bool DatagrumpSender::time_to_send_packet( void )
+{
+  return timestamp_ms() >= controller_.get_next_send_time();
+}
+
 int DatagrumpSender::loop( void )
 {
   /* read and write from the receiver using an event-driven "poller" */
@@ -123,13 +131,21 @@ int DatagrumpSender::loop( void )
      sending more datagrams */
   poller.add_action( Action( socket_, Direction::Out, [&] () {
 	/* Close the window */
-	while ( window_is_open() ) {
+	uint64_t end_time = timestamp_ms() + controller_.get_rtt();
+	while ( window_is_open()) {
 	  send_datagram();
+	  while (!time_to_send_packet()) {
+	    uint64_t sleeping = (controller_.get_next_send_time() -
+				 timestamp_ms());
+	    if (sleeping + timestamp_ms() > end_time)
+	      return ResultType::Continue;
+	    usleep( sleeping * 1000 );
+	  }
 	}
 	return ResultType::Continue;
       },
       /* We're only interested in this rule when the window is open */
-      [&] () { return window_is_open(); } ) );
+      [&] () { return window_is_open() && time_to_send_packet(); } ) );
 
   /* second rule: if sender receives an ack,
      process it and inform the controller
@@ -143,6 +159,7 @@ int DatagrumpSender::loop( void )
 
   /* Run these two rules forever */
   while ( true ) {
+
     const auto ret = poller.poll( controller_.timeout_ms() );
     if ( ret.result == PollResult::Exit ) {
       return ret.exit_status;

@@ -17,68 +17,31 @@ double read_env( const char *name, double def )
   return result;
 }
 
-int prev_rtt;
+const double window_scaling = 2.0;
 
 /* Default constructor */
 Controller::Controller( const bool debug )
-  : debug_( debug ), initialized( false ), curr_phase( STARTUP ),
-    BtlBwFilter( 100, 10, true ), RTpropFilter( 1000000, 1, false ),
-    max_rtt( 0 ), delivery_rate( 0 ), next_send_time( timestamp_ms() ),
-    cwnd_gain( 2.885 ), curr_stage( 0 ), stage_start( 0 ),
-    nslow_startup_rounds( 3 ), prev_btlbw( 0 ), current_delivered( 0 ),
-    delivered_map()
+  : debug_( debug ), average_delivery_rate ( 0 ), alpha ( 0.2 ), min_rtt( 0 ),
+    current_delivered( 0 ), delivered_map()
 {
-}
-
-double Controller::get_btlbw( void )
-{
-  double btlbw = BtlBwFilter.get_current();
-  if ( btlbw < 5 / get_rtt())
-    btlbw = 5 / get_rtt();
-  return btlbw;
-}
-
-double Controller::get_rtt( void )
-{
-  double rtt = RTpropFilter.get_current();
-  if ( rtt > 1e6 )
-    rtt = 1;
-  return rtt;
-}
-
-double Controller::get_pace_gain( void )
-{
-  if ( curr_phase == STARTUP )
-    return startup_pacing;
-  if ( curr_phase == DRAIN )
-    return drain_pacing;
-  return pacing_stages[curr_stage];
-}
-
-double Controller::get_cwnd_gain( void )
-{
-  if ( curr_phase == STARTUP )
-    return startup_pacing;
-  if ( curr_phase == DRAIN )
-    return drain_pacing;
-  return 2;
 }
 
 /* Get current window size, in datagrams */
 unsigned int Controller::window_size( void )
 {
-  double bdp = get_btlbw() * get_rtt();
-  unsigned int window = get_cwnd_gain() * bdp;
+
+  unsigned int window = average_delivery_rate * min_rtt * window_scaling;
+
+  /* Initialize our window size to 10 */
+  if ( window == 0 )
+    window = 10;
+
   if ( debug_ ) {
     cerr << "At time " << timestamp_ms()
 	 << " window size is " << window << endl;
   }
   return window;
-}
 
-uint64_t Controller::get_next_send_time( void )
-{
-  return next_send_time;
 }
 
 /* A datagram was sent */
@@ -88,34 +51,10 @@ void Controller::datagram_was_sent( const uint64_t sequence_number,
                                     /* in milliseconds */
 {
   delivered_map[sequence_number] = current_delivered;
-  next_send_time = send_timestamp + 1.0 / ( get_btlbw() * get_pace_gain());
   
   if ( debug_ ) {
     cerr << "At time " << send_timestamp
 	 << " sent datagram " << sequence_number << endl;
-  }
-}
-
-void Controller::update_startup_phase( double delivery_rate )
-{
-  double btlbw_diff = delivery_rate - prev_btlbw;
-  if ( btlbw_diff < 0.25 * prev_btlbw )
-    nslow_startup_rounds++;
-  else
-    nslow_startup_rounds = 0;
-  prev_btlbw = delivery_rate;
-  if ( nslow_startup_rounds == 3 ) {
-    cout << "phase change to DRAIN" << endl;
-    curr_phase = DRAIN;
-  }
-}
-
-void Controller::update_drain_phase( uint64_t inflight )
-{
-  double bdp = get_btlbw() * get_rtt();
-  if ( inflight <= bdp ) {
-    curr_phase = STEADY;
-    cout << "phase change to STEADY" << endl;
   }
 }
 
@@ -126,31 +65,24 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
 			       /* when the acknowledged datagram was sent ( sender's clock ) */
 			       const uint64_t recv_timestamp_acked,
 			       /* when the acknowledged datagram was received ( receiver's clock )*/
-			       const uint64_t timestamp_ack_received,
+			       const uint64_t timestamp_ack_received )
                                /* when the ack was received ( by sender ) */
-                               const uint64_t inflight )
-                               /* Number of packets currently inflight */
 {
-  if ( sequence_number_acked >= current_delivered )
+
+  if ( sequence_number_acked > current_delivered )
     current_delivered++;
+
   uint64_t rtt = timestamp_ack_received - send_timestamp_acked;
-  RTpropFilter.update( timestamp_ack_received, ( double )rtt );
+  if ( rtt < min_rtt || min_rtt == 0 )
+    min_rtt = rtt;
 
-  delivery_rate = ( (( double ) current_delivered -
-		    delivered_map[sequence_number_acked] )
-		   / ( (double ) timestamp_ack_received - send_timestamp_acked ));
-  delivered_map.erase( sequence_number_acked );
-  BtlBwFilter.update( timestamp_ack_received, delivery_rate );
-
-  if ( timestamp_ack_received - stage_start > get_rtt()) {
-    stage_start = timestamp_ack_received;
-    curr_stage = ( curr_stage + 1 ) % 8;
-
-    if ( curr_phase == STARTUP )
-      update_startup_phase( delivery_rate );
-    if ( curr_phase == DRAIN )
-      update_drain_phase( inflight );
-  }
+  /* Calculate average delivery rate as an ewma. */
+  double delivery_rate = ( ( double ) current_delivered - delivered_map[sequence_number_acked] )
+                         / ( ( double )rtt );
+  if ( average_delivery_rate == 0 )
+    average_delivery_rate = delivery_rate;
+  else
+    average_delivery_rate = average_delivery_rate * ( 1 - alpha ) + alpha * delivery_rate;
 
 
   if ( debug_ ) {
@@ -166,7 +98,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
    before sending one more datagram */
 unsigned int Controller::timeout_ms( void )
 {
-  return 1000;
+  return 100; /* timeout of 100 ms */
 }
 
 void Controller::timed_out( void )

@@ -9,8 +9,7 @@ class Controller
 {
 private:
   bool debug_; /* Enables debugging output */
-
-  /* Add member variables here */
+  unsigned int the_window_size;
 
 public:
   /* Public interface for the congestion controller */

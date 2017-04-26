@@ -7,15 +7,20 @@ using namespace std;
 
 /* Default constructor */
 Controller::Controller( const bool debug )
-  : debug_( debug )
-{}
+  : debug_( debug ), the_window_size(50)
+{
+  char *window_env = getenv("WINDOW_SIZE");
+  if (window_env != NULL) {
+    long env_window_size = strtol(window_env, NULL, 10);
+    if (env_window_size)
+      the_window_size = env_window_size;
+  }
+  cout << "Set window size to " << the_window_size << endl;
+}
 
 /* Get current window size, in datagrams */
 unsigned int Controller::window_size( void )
 {
-  /* Default: fixed window size of 100 outstanding datagrams */
-  unsigned int the_window_size = 50;
-
   if ( debug_ ) {
     cerr << "At time " << timestamp_ms()
 	 << " window size is " << the_window_size << endl;

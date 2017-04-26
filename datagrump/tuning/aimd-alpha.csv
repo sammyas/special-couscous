@@ -1,0 +1,4 @@
+alpha,capacity,throughput,queue_delay,signal_delay,url
+0.0625,5.04,1.65,72,150,http://cs344g.keithw.org/report?bg-1493200775-eitahveg
+0.125,5.04,1.41,57,119,http://cs344g.keithw.org/report?bg-1493200917-reezubai
+0.25,5.04,1.23,61,122,http://cs344g.keithw.org/report?bg-1493201060-xuewahpi

@@ -70,6 +70,7 @@ def process_output(stats_markers, output):
 def run_with_envs(username, updates, repeat_times, stat_file, out_file):
     """ Writes stats as csv """
     base_env = os.environ
+    print updates
     env_field, key, values = updates
     stat_file.write("{},{},{},{},{},{}\n".format(
         key, 'capacity', 'throughput',
@@ -92,3 +93,38 @@ def run_with_envs(username, updates, repeat_times, stat_file, out_file):
             out_file.write("###############\n{}\n".format(output))
             stat_file.flush()
             out_file.flush()
+
+
+def run_with_multi_envs(username, updates, stat_file, out_file):
+    """ Writes stats as csv """
+    base_env = os.environ
+    print updates
+    keys = []
+    envs = []
+    iters = []
+    for update in updates:
+        envs.append(update[0])
+        keys.append(update[1])
+        iters.append(update[2])
+    stat_file.write("{},{},{},{},{},{}\n".format(
+        ','.join(keys), 'capacity', 'throughput',
+        'queue_delay', 'signal_delay',
+        'url'
+    ))
+    import itertools
+    for valueset in itertools.product(*iters):
+        print "Running with values ", valueset
+        env = base_env.copy()
+        for i in xrange(len(valueset)):
+            env[envs[i]] = str(valueset[i])
+        output = run_with_env(username, env)
+        stats = process_output(STATS_MARKERS, output)
+        stat_file.write("{},{},{},{},{},{}\n".format(
+            ','.join(map(str, valueset)), stats['capacity'], stats['throughput'],
+            stats['queue_delay'], stats['signal_delay'],
+            stats['url']
+        ))
+        out_file.write("###############\n{}\n".format(output))
+        stat_file.flush()
+        out_file.flush()
+

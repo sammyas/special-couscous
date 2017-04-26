@@ -17,7 +17,9 @@ private:
   double beta;
 
   double cwnd;
-
+  double rtt_gain;
+  double add_gain;
+  double mult_decr;
 public:
   /* Public interface for the congestion controller */
   /* You can change these if you prefer, but will need to change

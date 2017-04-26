@@ -1,0 +1,13 @@
+alpha,beta,rtt_gain,add_gain,mult_decr,capacity,throughput,queue_delay,signal_delay,url
+0.125,0.25,4.0,0.5,1.125,5.04,2.05,84,187,http://cs344g.keithw.org/report?bg-1493252439-vaequoov
+0.125,0.25,4.0,0.5,1.25,5.04,1.62,55,141,http://cs344g.keithw.org/report?bg-1493252581-aithievu
+0.125,0.25,4.0,0.5,1.5,5.04,1.2,45,104,http://cs344g.keithw.org/report?bg-1493252724-eezahque
+0.125,0.25,4.0,1,1.125,5.04,3.06,112,270,http://cs344g.keithw.org/report?bg-1493252866-quawiegh
+0.125,0.25,4.0,1,1.25,5.04,2.4,94,209,http://cs344g.keithw.org/report?bg-1493253009-ogaigooc
+0.125,0.25,4.0,1,1.5,5.04,1.9,70,151,http://cs344g.keithw.org/report?bg-1493253151-gicohlap
+0.125,0.25,6.0,0.5,1.125,5.04,3.09,139,316,http://cs344g.keithw.org/report?bg-1493253294-iphiepip
+0.125,0.25,6.0,0.5,1.25,5.04,2.45,93,206,http://cs344g.keithw.org/report?bg-1493253436-ahshetah
+0.125,0.25,6.0,0.5,1.5,5.04,1.89,65,136,http://cs344g.keithw.org/report?bg-1493253579-ohohghax
+0.125,0.25,6.0,1,1.125,5.04,3.86,214,469,http://cs344g.keithw.org/report?bg-1493253722-sierutij
+0.125,0.25,6.0,1,1.25,5.04,3.23,153,319,http://cs344g.keithw.org/report?bg-1493253865-aiquoeca
+0.125,0.25,6.0,1,1.5,5.04,2.43,129,256,http://cs344g.keithw.org/report?bg-1493254007-eiweivei

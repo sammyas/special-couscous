@@ -1,0 +1,4 @@
+add_gain,capacity,throughput,queue_delay,signal_delay,url
+1,5.04,1.58,63,131,http://cs344g.keithw.org/report?bg-1493202058-ukaephiw
+2,5.04,2.18,93,191,http://cs344g.keithw.org/report?bg-1493202200-xohreeha
+3,5.04,2.62,123,255,http://cs344g.keithw.org/report?bg-1493202343-phaephah

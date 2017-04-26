@@ -1,0 +1,4 @@
+mult_decr,capacity,throughput,queue_delay,signal_delay,url
+1.5,5.04,1.89,65,148,http://cs344g.keithw.org/report?bg-1493202486-aigezeek
+2.0,5.04,1.52,61,131,http://cs344g.keithw.org/report?bg-1493202628-ejixaifo
+2.5,5.04,1.39,58,125,http://cs344g.keithw.org/report?bg-1493202770-aithahyi

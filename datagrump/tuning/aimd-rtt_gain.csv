@@ -1,0 +1,4 @@
+rtt_gain,capacity,throughput,queue_delay,signal_delay,url
+2.0,5.04,0.91,38,100,http://cs344g.keithw.org/report?bg-1493201630-ahnohdei
+4.0,5.04,1.51,60,129,http://cs344g.keithw.org/report?bg-1493201772-deebeida
+8.0,5.04,2.71,128,252,http://cs344g.keithw.org/report?bg-1493201915-bahsoofe

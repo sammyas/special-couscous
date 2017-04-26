@@ -5,20 +5,29 @@
 
 using namespace std;
 
+double read_env( const char *name, double def )
+{
+  double result = def;
+  char *val_env = getenv( name );
+  if (val_env != NULL) {
+    double value = strtod( val_env, NULL );
+    if (value > 0.0)
+      result = value;
+  }
+  return result;
+}
+
 /* Default constructor */
 Controller::Controller( const bool debug )
   : debug_( debug ), initialized ( false ), RTO ( 1000 ), SRTT (0), RTTVAR (0),
-    alpha( 1/8.0 ), beta( 1/4.0 ), cwnd (50)
+    alpha( 1/8.0 ), beta( 1/4.0 ), cwnd( 4 ), rtt_gain( 6.0 ), add_gain( 0.5 ),
+    mult_decr( 1.5 )
 {
-  /*
-  char *alpha_env = getenv("ALPHA");
-  if (alpha_env != NULL) {
-    double env_alpha = strtol(window_env, NULL, 10);
-    if (env_alpha)
-      alpha = env_alpha
-  }
-  cout << "Set alpha to " << alpha << endl;
-  */
+  alpha = read_env("ALPHA", alpha);
+  beta = read_env("BETA", beta);
+  rtt_gain = read_env("RTT_GAIN", rtt_gain);
+  add_gain = read_env("ADD_GAIN", add_gain);
+  mult_decr = read_env("MULT_DECR", mult_decr);
 }
 
 /* Get current window size, in datagrams */
@@ -60,23 +69,27 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   if (!initialized) {
     SRTT = R;
     RTTVAR = R;
-    RTO = SRTT + 4 * RTTVAR;
+    RTO = SRTT + rtt_gain * RTTVAR;
     initialized = true;
   }
   else {
     if (R >= RTO) {
-      cerr << "timed out when the window size was " << cwnd << endl;
-      cwnd = cwnd/2;
+      if ( debug_ ) {
+	cerr << "timed out when the window size was " << cwnd << endl;
+      }
+      cwnd = cwnd / mult_decr;
     }
     else {
-      cwnd += 1/cwnd;
+      cwnd += add_gain / cwnd;
     }
     uint64_t rtt_diff = (SRTT > R) ? SRTT - R : R - SRTT;
     RTTVAR = (1 - beta) * RTTVAR + beta * rtt_diff;
     SRTT = (1 - alpha) * SRTT + alpha * R;
-    RTO = SRTT + 4 * RTTVAR;
-    cerr << "RTO is " << RTO << " SRTT is " << SRTT << " RTTVAR is " << RTTVAR
-      << " and our new rtt is " << R << " with window size " << cwnd << endl;
+    RTO = SRTT + rtt_gain * RTTVAR;
+    if ( debug_ ) {
+      cerr << "RTO is " << RTO << " SRTT is " << SRTT << " RTTVAR is " << RTTVAR
+	   << " and our new rtt is " << R << " with window size " << cwnd << endl;
+    }
   }
 
   if ( debug_ ) {

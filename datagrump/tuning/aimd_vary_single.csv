@@ -1,0 +1,16 @@
+key,value,capacity,throughput,queue_delay,signal_delay,url
+add,1,5.04,1.58,63,131,http://cs344g.keithw.org/report?bg-1493202058-ukaephiw
+add,2,5.04,2.18,93,191,http://cs344g.keithw.org/report?bg-1493202200-xohreeha
+add,3,5.04,2.62,123,255,http://cs344g.keithw.org/report?bg-1493202343-phaephah
+mult,1.5,5.04,1.89,65,148,http://cs344g.keithw.org/report?bg-1493202486-aigezeek
+mult,2.0,5.04,1.52,61,131,http://cs344g.keithw.org/report?bg-1493202628-ejixaifo
+mult,2.5,5.04,1.39,58,125,http://cs344g.keithw.org/report?bg-1493202770-aithahyi
+rtt,2.0,5.04,0.91,38,100,http://cs344g.keithw.org/report?bg-1493201630-ahnohdei
+rtt,4.0,5.04,1.51,60,129,http://cs344g.keithw.org/report?bg-1493201772-deebeida
+rtt,8.0,5.04,2.71,128,252,http://cs344g.keithw.org/report?bg-1493201915-bahsoofe
+alpha,0.0625,5.04,1.65,72,150,http://cs344g.keithw.org/report?bg-1493200775-eitahveg
+alpha,0.125,5.04,1.41,57,119,http://cs344g.keithw.org/report?bg-1493200917-reezubai
+alpha,0.25,5.04,1.23,61,122,http://cs344g.keithw.org/report?bg-1493201060-xuewahpi
+beta,0.125,5.04,1.61,67,143,http://cs344g.keithw.org/report?bg-1493201202-teizoosu
+beta,0.25,5.04,1.55,64,129,http://cs344g.keithw.org/report?bg-1493201345-aedaetii
+beta,0.5,5.04,1.29,52,116,http://cs344g.keithw.org/report?bg-1493201487-faitieti

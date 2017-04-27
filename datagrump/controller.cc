@@ -20,14 +20,12 @@ double read_env( const char *name, double def )
 /* Default constructor */
 Controller::Controller( const bool debug )
   : debug_( debug ), initialized ( false ), RTO ( 1000 ), SRTT (0), RTTVAR (0),
-    alpha( 1/8.0 ), beta( 1/4.0 ), cwnd( 4 ), rtt_gain( 6.0 ), add_gain( 0.5 ),
-    mult_decr( 1.5 )
+    alpha( 1/8.0 ), beta( 1/4.0 ), cwnd( 4 ), rtt_gain( 6.0 ), add_gain( 1.0 ),
+    mult_decr( 2.0 ), delay_thresh( 200 )
 {
-  alpha = read_env("ALPHA", alpha);
-  beta = read_env("BETA", beta);
-  rtt_gain = read_env("RTT_GAIN", rtt_gain);
   add_gain = read_env("ADD_GAIN", add_gain);
   mult_decr = read_env("MULT_DECR", mult_decr);
+  delay_thresh = read_env("DELAY", delay_thresh);
 }
 
 /* Get current window size, in datagrams */
@@ -66,30 +64,15 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
 {
 
   uint64_t R = timestamp_ack_received - send_timestamp_acked;
-  if (!initialized) {
-    SRTT = R;
-    RTTVAR = R;
-    RTO = SRTT + rtt_gain * RTTVAR;
-    initialized = true;
+  if (R >= delay_thresh) {
+    if ( debug_ ) {
+      cerr << "timed out when the window size was " << cwnd << endl;
+    }
+    if (cwnd > 1)
+      cwnd = cwnd / mult_decr;
   }
   else {
-    if (R >= RTO) {
-      if ( debug_ ) {
-	cerr << "timed out when the window size was " << cwnd << endl;
-      }
-      cwnd = cwnd / mult_decr;
-    }
-    else {
-      cwnd += add_gain / cwnd;
-    }
-    uint64_t rtt_diff = (SRTT > R) ? SRTT - R : R - SRTT;
-    RTTVAR = (1 - beta) * RTTVAR + beta * rtt_diff;
-    SRTT = (1 - alpha) * SRTT + alpha * R;
-    RTO = SRTT + rtt_gain * RTTVAR;
-    if ( debug_ ) {
-      cerr << "RTO is " << RTO << " SRTT is " << SRTT << " RTTVAR is " << RTTVAR
-	   << " and our new rtt is " << R << " with window size " << cwnd << endl;
-    }
+    cwnd += add_gain / cwnd;
   }
 
   if ( debug_ ) {
@@ -105,7 +88,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
    before sending one more datagram */
 unsigned int Controller::timeout_ms( void )
 {
-  return RTO;
+  return delay_thresh;
 }
 
 void Controller::timed_out( void )

@@ -17,8 +17,8 @@ double read_env( const char *name, double def )
   return result;
 }
 
-const double window_scaling = read_env("WINDOW_SCALING", 1.75);
-const double timeout = read_env("TIMEOUT", 50);
+const double window_scaling = read_env("WINDOW_SCALING", 1.5);
+const double timeout = read_env("TIMEOUT", 75);
 
 /* Default constructor */
 Controller::Controller( const bool debug )

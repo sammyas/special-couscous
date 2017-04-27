@@ -1,0 +1,13 @@
+delay,capacity,throughput,queue_delay,signal_delay,url
+40,5.04,0.25,38,78,http://cs344g.keithw.org/report?bg-1493318845-ahxighoo
+60,5.04,0.55,25,117,http://cs344g.keithw.org/report?bg-1493318987-vaexohba
+80,5.04,1.32,29,122,http://cs344g.keithw.org/report?bg-1493319130-jeedeeth
+100,5.04,1.93,40,151,http://cs344g.keithw.org/report?bg-1493319272-neewoohi
+120,5.04,2.64,52,164,http://cs344g.keithw.org/report?bg-1493319415-oozeicha
+140,5.04,3.07,66,172,http://cs344g.keithw.org/report?bg-1493319557-pahxiaqu
+160,5.04,3.49,86,185,http://cs344g.keithw.org/report?bg-1493319700-pajooyae
+180,5.04,3.81,100,216,http://cs344g.keithw.org/report?bg-1493319843-donaujur
+200,5.04,3.93,112,258,http://cs344g.keithw.org/report?bg-1493319986-sahshora
+220,5.04,4.02,125,294,http://cs344g.keithw.org/report?bg-1493320128-jipooxie
+240,5.04,4.23,134,339,http://cs344g.keithw.org/report?bg-1493320271-eeghagag
+260,5.04,4.17,152,362,http://cs344g.keithw.org/report?bg-1493320414-yufoonie

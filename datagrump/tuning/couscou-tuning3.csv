@@ -1,0 +1,9 @@
+alpha,window_scale,timeout,capacity,throughput,queue_delay,signal_delay,url
+0.8,1.5,50,5.04,2.99,50,90,http://cs344g.keithw.org/report?couscou-1493280662-beeveojo
+0.8,1.5,75,5.04,2.25,46,100,http://cs344g.keithw.org/report?couscou-1493280805-ogeenohs
+0.8,1.75,50,5.04,4.04,76,128,http://cs344g.keithw.org/report?couscou-1493280947-yohngahx
+0.8,1.75,75,5.04,4.02,72,114,http://cs344g.keithw.org/report?couscou-1493281090-vohphieb
+0.9,1.5,50,5.04,3.04,51,103,http://cs344g.keithw.org/report?couscou-1493281233-bahhicho
+0.9,1.5,75,5.04,2.42,47,100,http://cs344g.keithw.org/report?couscou-1493281375-vaiseeja
+0.9,1.75,50,5.04,4.36,77,121,http://cs344g.keithw.org/report?couscou-1493281518-xahkaefe
+0.9,1.75,75,5.04,3.9,75,121,http://cs344g.keithw.org/report?couscou-1493281661-haedievi

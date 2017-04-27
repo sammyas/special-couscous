@@ -1,0 +1,5 @@
+alg,througput,queueing_delay,signal_delay
+TIMELY,3.69,75,143
+BBR-paper,3.90,159,246
+BBR-tuned,4.11,142,220
+Couscou,4.36,0,121

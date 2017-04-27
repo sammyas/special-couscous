@@ -17,13 +17,15 @@ double read_env( const char *name, double def )
   return result;
 }
 
-const double window_scaling = 2.0;
+const double window_scaling = read_env("WINDOW_SCALING", 1.75);
+const double timeout = read_env("TIMEOUT", 50);
 
 /* Default constructor */
 Controller::Controller( const bool debug )
-  : debug_( debug ), average_delivery_rate ( 0 ), alpha ( 0.2 ), min_rtt( 0 ),
+  : debug_( debug ), average_delivery_rate ( 0 ), alpha ( 0.9 ), min_rtt( 0 ),
     current_delivered( 0 ), delivered_map()
 {
+  alpha = read_env("ALPHA", alpha);
 }
 
 /* Get current window size, in datagrams */
@@ -98,7 +100,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
    before sending one more datagram */
 unsigned int Controller::timeout_ms( void )
 {
-  return 100; /* timeout of 100 ms */
+  return timeout;
 }
 
 void Controller::timed_out( void )

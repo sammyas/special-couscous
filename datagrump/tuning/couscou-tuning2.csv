@@ -1,0 +1,13 @@
+alpha,window_scale,capacity,throughput,queue_delay,signal_delay,url
+0.8,1.25,5.04,0.78,47,107,http://cs344g.keithw.org/report?bg-1493278087-yejaewui
+0.8,1.25,5.04,0.77,50,103,http://cs344g.keithw.org/report?bg-1493278229-aichawei
+0.8,1.5,5.04,2.45,49,102,http://cs344g.keithw.org/report?bg-1493278377-chugisho
+0.8,1.5,5.04,2.81,48,102,http://cs344g.keithw.org/report?bg-1493278520-jebiequa
+0.9,1.25,5.04,0.85,50,106,http://cs344g.keithw.org/report?bg-1493278662-hoongahm
+0.9,1.25,5.04,0.84,51,108,http://cs344g.keithw.org/report?bg-1493278804-aeveweeg
+0.9,1.5,5.04,3.18,52,103,http://cs344g.keithw.org/report?bg-1493278947-eiquaego
+0.9,1.5,5.04,3.46,54,104,http://cs344g.keithw.org/report?bg-1493279089-aethehed
+0.95,1.25,5.04,1.14,41,98,http://cs344g.keithw.org/report?bg-1493279232-eiraikae
+0.95,1.25,5.04,0.92,48,104,http://cs344g.keithw.org/report?bg-1493279374-lupooqua
+0.95,1.5,5.04,2.68,49,105,http://cs344g.keithw.org/report?bg-1493279517-shegahni
+0.95,1.5,5.04,2.98,51,107,http://cs344g.keithw.org/report?bg-1493279659-ahbijaif
